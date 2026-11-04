@@ -34,3 +34,4 @@ EXPOSE 8000
 
 # Run with 1 worker to conserve RAM on Render Free (512 MB limit)
 CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000", "--workers", "1"]
+

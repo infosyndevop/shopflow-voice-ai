@@ -147,3 +147,4 @@ class NumberParser:
 
         total = running_sum + current_val
         return round(total, 4)
+

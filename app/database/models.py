@@ -23,3 +23,4 @@ from sqlalchemy.orm import declarative_base
 Base = declarative_base()
 
 # No authoritative tables created here to prevent database divergence or destructive schema collisions.
+

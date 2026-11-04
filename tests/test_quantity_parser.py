@@ -99,3 +99,4 @@ def test_zero_or_negative_quantities_rejected():
 
     res2 = QuantityParser.parse("-5 soaps")
     assert res2.is_ambiguous is True
+

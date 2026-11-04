@@ -108,3 +108,4 @@ class VariantMatcher:
             clarification_prompt=f"Please specify the variant for {product.canonical_name}. Available options: {', '.join(variant_names)}",
             candidate_variants=variant_names
         )
+

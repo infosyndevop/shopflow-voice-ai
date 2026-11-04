@@ -22,3 +22,4 @@ def run_async(coro: Coroutine) -> Any:
             stack.pop()
             val = e.value
     return val
+

@@ -198,3 +198,4 @@ class ProductMatcher:
             candidates=candidates[:5],
             clarification_prompt=f"Did you mean one of: {', '.join(options)}?"
         )
+

@@ -112,3 +112,4 @@ def test_cross_tenant_product_isolation():
         assert t2_success.status == "verified"
         assert t2_success.product.canonical_name == "Store B Organic Rice"
     run_async(_test())
+

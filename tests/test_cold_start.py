@@ -149,3 +149,4 @@ def test_empty_audio_payload_rejected():
             await provider.transcribe(b"")
         assert exc_info.value.status_code == 400
     run_async(_test())
+

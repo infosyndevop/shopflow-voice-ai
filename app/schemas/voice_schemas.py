@@ -135,3 +135,4 @@ class DiagnosticsResponse(BaseModel):
     uptime_seconds: float
     total_requests_processed: int
     memory_usage_mb: Optional[float] = None
+

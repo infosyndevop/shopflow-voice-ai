@@ -109,3 +109,4 @@ def test_confidence_engine_marks_sku_conflict_as_clarification():
         rejection_reason="Spoken product contradicts SKU"
     )
     assert metrics.status == ItemStatus.NEEDS_CLARIFICATION
+

@@ -90,3 +90,4 @@ async def health_diagnostics():
         total_requests_processed=REQUEST_COUNTER,
         memory_usage_mb=memory_mb
     )
+

@@ -35,3 +35,4 @@ services:
         value: "0.60"
       - key: DEFAULT_MAX_QUANTITY
         value: "500"
+

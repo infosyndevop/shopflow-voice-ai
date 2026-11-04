@@ -67,3 +67,4 @@ class CatalogueProvider(ABC):
     async def check_health(self) -> bool:
         """Verify catalogue service health."""
         pass
+

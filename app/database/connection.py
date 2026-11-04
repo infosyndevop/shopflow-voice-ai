@@ -50,3 +50,4 @@ async def check_db_health() -> bool:
     except Exception as e:
         logger.warning(f"Database health check failed: {e}")
         return False
+

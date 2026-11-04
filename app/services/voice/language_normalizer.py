@@ -115,3 +115,4 @@ class LanguageNormalizer:
                 normalized_str = pattern.sub(canonical, normalized_str)
 
         return normalized_str
+
