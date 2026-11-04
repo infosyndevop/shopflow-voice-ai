@@ -1,0 +1,37 @@
+services:
+  - type: web
+    name: cryvex-shopflow-voice-ai
+    runtime: docker
+    plan: free
+    region: singapore
+    dockerfilePath: Dockerfile
+    healthCheckPath: /health/live
+    envVars:
+      - key: ENVIRONMENT
+        value: production
+      - key: DEBUG
+        value: "false"
+      - key: SERVICE_API_KEY
+        generateValue: true
+      - key: CATALOGUE_PROVIDER_TYPE
+        value: mock
+      - key: SHOPFLOW_BACKEND_URL
+        value: https://main-backend.shopflow.example.com
+      - key: SHOPFLOW_INTERNAL_API_KEY
+        sync: false
+      - key: SPEECH_PROVIDER_TYPE
+        value: mock
+      - key: SPEECH_MODEL_NAME
+        value: mock-speech-v1
+      - key: SPEECH_MODEL_WARMUP_ON_STARTUP
+        value: "true"
+      - key: MAX_AUDIO_SIZE_BYTES
+        value: "5242880"
+      - key: INFERENCE_TIMEOUT_SECONDS
+        value: "8.0"
+      - key: HIGH_CONFIDENCE_THRESHOLD
+        value: "0.85"
+      - key: MEDIUM_CONFIDENCE_THRESHOLD
+        value: "0.60"
+      - key: DEFAULT_MAX_QUANTITY
+        value: "500"
