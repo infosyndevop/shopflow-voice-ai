@@ -66,7 +66,7 @@ class AudioPayloadTooLargeError(VoiceAIException):
         super().__init__(
             message=message,
             error_code="AUDIO_TOO_LARGE",
-            status_code=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE,
+            status_code=getattr(status, "HTTP_413_CONTENT_TOO_LARGE", 413),
             retryable=False,
         )
 

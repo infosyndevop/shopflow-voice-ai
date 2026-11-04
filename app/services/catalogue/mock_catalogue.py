@@ -237,7 +237,6 @@ class MockCatalogueProvider(CatalogueProvider):
         if self.simulate_offline:
             raise CatalogueServiceUnavailableError("Mocked catalogue service failure: offline")
         if self.simulate_timeout:
-            await asyncio.sleep(0.01)
             raise CatalogueTimeoutError("Mocked catalogue lookup timeout")
 
     async def get_tenant_products(self, tenant_id: str) -> List[CatalogueProduct]:

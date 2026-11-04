@@ -41,10 +41,10 @@ def verify_service_credentials(
     """Validates service-to-service shared secret using constant-time comparison."""
     token: Optional[str] = None
 
-    if service_key:
+    if isinstance(service_key, str) and service_key.strip():
         token = service_key.strip()
-    elif authorization and authorization.startswith("Bearer "):
-        token = authorization[7:].strip()
+    elif isinstance(authorization, str) and authorization.strip().startswith("Bearer "):
+        token = authorization.strip()[7:].strip()
 
     if not token:
         raise AuthenticationError("Service authentication credential missing")

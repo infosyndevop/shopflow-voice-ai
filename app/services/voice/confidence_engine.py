@@ -62,6 +62,18 @@ class ConfidenceEngine:
                 rejection_reason="Tenant context is not verified",
             )
 
+        # SKU conflict -> Medium confidence -> needs_clarification
+        if has_sku_conflict:
+            return ConfidenceMetrics(
+                speech_confidence=speech_quality,
+                product_confidence=product_score,
+                variant_confidence=0.5,
+                quantity_confidence=0.98 if (quantity and not quantity_ambiguous) else 0.0,
+                overall_confidence=round(product_score * 0.5, 3),
+                status=ItemStatus.NEEDS_CLARIFICATION,
+                rejection_reason=rejection_reason or "Disagreement between product name and spoken SKU",
+            )
+
         if rejection_reason:
             return ConfidenceMetrics(
                 speech_confidence=speech_quality,

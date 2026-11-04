@@ -73,7 +73,6 @@ class MockSpeechRecognitionProvider(SpeechRecognitionProvider):
     async def initialize(self) -> None:
         """Simulates model loading lifecycle."""
         self.state = ModelLifecycleState.LOADING
-        await asyncio.sleep(0.01)  # brief non-blocking yield
         if self.simulate_failure:
             self.state = ModelLifecycleState.FAILED
             logger.error("Mock speech model initialization failed as requested")
@@ -153,14 +152,23 @@ class SpeechModelManager:
         if provider.state != ModelLifecycleState.READY:
             raise ModelNotReadyError(f"Model is currently {provider.state.value}")
 
-        async with self._inference_semaphore:
-            try:
-                return await asyncio.wait_for(
-                    provider.transcribe(audio_bytes, mime_type, language_hint),
-                    timeout=settings.INFERENCE_TIMEOUT_SECONDS
-                )
-            except asyncio.TimeoutError as exc:
-                raise ModelInferenceError("Speech recognition inference timed out") from exc
+        try:
+            loop = asyncio.get_running_loop()
+            has_loop = True
+        except RuntimeError:
+            has_loop = False
+
+        if has_loop:
+            async with self._inference_semaphore:
+                try:
+                    return await asyncio.wait_for(
+                        provider.transcribe(audio_bytes, mime_type, language_hint),
+                        timeout=settings.INFERENCE_TIMEOUT_SECONDS
+                    )
+                except asyncio.TimeoutError as exc:
+                    raise ModelInferenceError("Speech recognition inference timed out") from exc
+        else:
+            return await provider.transcribe(audio_bytes, mime_type, language_hint)
 
 
 model_manager = SpeechModelManager()

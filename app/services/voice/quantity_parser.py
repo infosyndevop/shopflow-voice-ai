@@ -128,23 +128,31 @@ class QuantityParser:
             # Check 3 tokens: e.g. "two and a half" -> handled by number parser
             if i + 3 <= len(tokens):
                 candidate_3 = NumberParser.parse_compound_number(tokens[i:i+3])
-                if candidate_3 is not None and candidate_3 > 0:
+                if candidate_3 is not None:
                     num_candidate = candidate_3
                     consumed_tokens = 3
 
             # Check 2 tokens: e.g. "twenty five", "രണ്ട് പാക്കറ്റ്"
             if num_candidate is None and i + 2 <= len(tokens):
                 candidate_2 = NumberParser.parse_compound_number(tokens[i:i+2])
-                if candidate_2 is not None and candidate_2 > 0:
+                if candidate_2 is not None:
                     num_candidate = candidate_2
                     consumed_tokens = 2
 
-            # Check 1 token: e.g. "three", "3", "ഒന്ന്"
+            # Check 1 token: e.g. "three", "3", "ഒന്ന്", "-5", "zero"
             if num_candidate is None:
-                candidate_1 = NumberParser.parse_compound_number([token])
-                if candidate_1 is not None and candidate_1 > 0:
-                    num_candidate = candidate_1
-                    consumed_tokens = 1
+                token_clean = token.strip()
+                if token_clean.startswith("-") and re.match(r"^-\d+(\.\d+)?$", token_clean):
+                    try:
+                        num_candidate = float(token_clean)
+                        consumed_tokens = 1
+                    except ValueError:
+                        pass
+                if num_candidate is None:
+                    candidate_1 = NumberParser.parse_compound_number([token])
+                    if candidate_1 is not None:
+                        num_candidate = candidate_1
+                        consumed_tokens = 1
 
             if num_candidate is not None and quantity is None:
                 # We found our order quantity candidate

@@ -9,7 +9,7 @@ from app.services.catalogue.interface import CatalogueProduct, CatalogueProductV
 from app.services.voice.number_parser import NumberParser
 
 SKU_TRIGGER_RE = re.compile(
-    r"\b(?:sku|code|item\s+code|എസ്\s*കെ\s*യു|കുറിയീട്)\s*([a-zA-Z0-9\-_ ]+)\b",
+    r"\b(?:sku|item\s+code|code|എസ്\s*കെ\s*യു|കുറിയീട്)\s+([a-zA-Z0-9\-_]+(?:\s+[a-zA-Z0-9\-_]+){0,3})",
     re.IGNORECASE
 )
 
