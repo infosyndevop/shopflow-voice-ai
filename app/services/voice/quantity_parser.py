@@ -21,9 +21,20 @@ STANDARD_UNITS = {
     "piece", "packet", "box", "kg", "g", "litre", "ml"
 }
 
-# Regex to detect price patterns: e.g. "10 rupees", "ten rs", "50 രൂപ"
-PRICE_PATTERN = re.compile(
+# Regex to detect price patterns:
+# Suffix: e.g. "10 rupees", "ten rs", "50 രൂപ"
+PRICE_SUFFIX_PATTERN = re.compile(
     r"\b(\d+(?:\.\d+)?|[a-zA-Z\u0D00-\u0D7F\u0B80-\u0BFF]+)\s*(?:rupees|rupee|rs|രൂപ|ரூபாய்|ruba|rooba)\b",
+    re.IGNORECASE
+)
+# Prefix / Symbol: e.g. "₹10", "₹ 50", "Rs. 20", "Rs 15", "INR 100"
+PRICE_PREFIX_PATTERN = re.compile(
+    r"(?:₹|rs\.?|inr)\s*(\d+(?:\.\d+)?|[a-zA-Z\u0D00-\u0D7F\u0B80-\u0BFF]+)\b",
+    re.IGNORECASE
+)
+# Price shorthand: e.g. "10/-"
+PRICE_SLASH_PATTERN = re.compile(
+    r"\b(\d+(?:\.\d+)?)\s*/-",
     re.IGNORECASE
 )
 
@@ -75,16 +86,18 @@ class QuantityParser:
                 brand_placeholders[placeholder] = match.group(0)
                 text = pattern.sub(placeholder, text)
 
-        # Step 2: Extract and isolate price references (e.g. "10 rupees biscuit")
+        # Step 2: Extract and isolate price references (e.g. "10 rupees biscuit", "₹10 biscuit", "10/- biscuit")
         price_ref: Optional[float] = None
-        price_match = PRICE_PATTERN.search(text)
-        if price_match:
-            price_val_token = price_match.group(1)
-            parsed_price = NumberParser.parse_compound_number(price_val_token.split())
-            if parsed_price is not None and parsed_price > 0:
-                price_ref = parsed_price
-            # Strip the price reference from text so it is not parsed as order quantity
-            text = PRICE_PATTERN.sub(" ", text).strip()
+        for pattern in (PRICE_SUFFIX_PATTERN, PRICE_PREFIX_PATTERN, PRICE_SLASH_PATTERN):
+            price_match = pattern.search(text)
+            if price_match:
+                price_val_token = price_match.group(1)
+                parsed_price = NumberParser.parse_compound_number(price_val_token.split())
+                if parsed_price is not None and parsed_price > 0:
+                    price_ref = parsed_price
+                # Strip the price reference from text so it is not parsed as order quantity
+                text = pattern.sub(" ", text).strip()
+                break
 
         # Step 3: Extract package size (e.g. "160 gram", "100g")
         package_size_str: Optional[str] = None
@@ -180,6 +193,10 @@ class QuantityParser:
                     elif next_token_lower in ["g", "gram", "gm", "ഗ്രാം"]:
                         unit = "g"
                         i += 1
+
+                # If an explicit unit was found and followed by "of" (e.g. "two pieces of egg masala")
+                if unit is not None and i < len(tokens) and tokens[i].lower() == "of":
+                    i += 1
                 continue
             elif num_candidate is not None and quantity is not None:
                 # A second quantity candidate was found! This is ambiguous.
@@ -204,7 +221,8 @@ class QuantityParser:
         for placeholder, original_brand in brand_placeholders.items():
             remaining_str = remaining_str.replace(placeholder, original_brand)
 
-        # Clean excess spaces
+        # Clean excess spaces and orphaned 'of' prepositions
+        remaining_str = re.sub(r"^(?:of\s+)+", "", remaining_str, flags=re.IGNORECASE).strip()
         remaining_str = re.sub(r"\s+", " ", remaining_str).strip()
 
         # Validation rules:

@@ -251,88 +251,84 @@ Interprets raw transcript text using the authenticated tenant's catalogue.
 
 ## 7. Main ShopFlow Backend Integration Contract
 
-To connect the Voice AI microservice to the Main ShopFlow Backend, set `CATALOGUE_PROVIDER_TYPE=http` and configure the following contract:
+To connect the Voice AI microservice to the Main ShopFlow Backend, set `CATALOGUE_PROVIDER_TYPE=http` and consult the complete specification:
+- **Specification Document**: [`docs/CATALOGUE_INTEGRATION_SPEC.md`](docs/CATALOGUE_INTEGRATION_SPEC.md)
+- **Endpoint**: `GET /api/v1/internal/catalogue`
+- **Auth**: Service credentials with constant-time verification (`X-Service-Client-Id`, `X-Service-Secret`)
+- **Tenant Scoping**: Enforced through `X-Tenant-Id` header
+- **Offline / Mock Mode**: `MockCatalogueProvider` is available for zero-dependency local testing.
 
-**Endpoint**:
-`GET {SHOPFLOW_BACKEND_URL}/internal/api/v1/tenants/{tenant_id}/catalogue`
+---
 
-**Headers**:
-- `X-ShopFlow-Internal-Key`: `<SHOPFLOW_INTERNAL_API_KEY>`
-- `X-Tenant-ID`: `<tenant_id>`
+## 8. Speech Recognition Engine & Model Benchmarking
 
-**Expected Response (200 OK)**:
-```json
-{
-  "tenant_id": "tenant-abc",
-  "products": [
-    {
-      "product_id": "prod-101",
-      "canonical_name": "Urvashi Soap",
-      "category": "Personal Care",
-      "default_unit": "piece",
-      "variants": [
-        {
-          "variant_id": "var-101-a",
-          "variant_name": "100g",
-          "sku": "URV-100",
-          "barcode": "8901234567890",
-          "package_size": "100g",
-          "unit": "piece",
-          "stock_available": 45.0
-        }
-      ],
-      "aliases": [
-        {"alias_phrase": "urvasi soap", "language": "en"},
-        {"alias_phrase": "ഊർവശി സോപ്പ്", "language": "ml"}
-      ]
-    }
-  ]
-}
+The Voice AI microservice supports **Sherpa-ONNX CPU inference** using quantized INT8 NeMo Fast-Conformer and IndicConformer ONNX exports.
+
+### Benchmarks on Windows 11 (8 GB RAM, 1 CPU thread)
+
+| Model Language | Model File | Model Size | Load Time | 5s Audio Latency | 30s Audio Latency | Average RTF | Peak RAM |
+|---|---|---|---|---|---|---|---|
+| **English (`en`)** | `models/en/model.int8.onnx` | 166.52 MB | 1.135 s | 0.184 s | 1.267 s | **0.038** | ~210 MB |
+| **Malayalam (`ml`)** | `models/ml/model.int8.onnx` | 188.44 MB | 0.694 s | 0.594 s | 4.038 s | **0.120** | ~238 MB |
+| **Tamil (`ta`)** | `models/ta/model.int8.onnx` | 188.44 MB | 0.707 s | 0.554 s | 4.295 s | **0.119** | ~238 MB |
+
+*Base Python backend memory: ~25.95 MB.*
+
+### Strict Render Free (512 MB RAM) Protection Rules
+1. **Never load multiple language models simultaneously**: When switching languages, previous models are cleanly unloaded from memory and Python garbage collection is triggered.
+2. **Single Inference Worker**: Bound via `asyncio.Semaphore(1)` to eliminate RAM spikes.
+3. **Download Tooling**: Models are downloaded with SHA256 checksum verification via `python scripts/download_models.py --lang en`.
+
+---
+
+## 9. Multi-Product & Conversational Interpretation
+
+Supports complex compound sentences and conversational retail dialogs:
+- **Multi-product Extraction**:
+  `"Two Urvashi soaps, three packets of 160 gram washing soap and one egg"`
+  -> Dissects into 3 distinct items, preserving exact package sizes, units, and quantities.
+- **Partial Ambiguity Handling**:
+  If any phrase is unverified or ambiguous, verified items are retained in `session.items` while the unresolved phrase is isolated for clarification.
+- **Similar Product Protection**:
+  "Egg" and "Egg Masala" are evaluated strictly against their canonical names and never merged.
+- **Conversational Commands**:
+  - Removals: `"remove washing soap"` -> flags status as `rejected`.
+  - Corrections: `"not soap, egg"` -> replaces previous item with corrected item.
+  - Clarification resolution: Resolves pending variant/quantity requests across conversation turns.
+
+---
+
+## 10. Automated Test Suite (65 Passing Tests)
+
+Run the entire automated test suite:
+```powershell
+.\venv\Scripts\python -m pytest tests -v
 ```
 
+Test Suites:
+1. `tests/test_adversarial_quantities.py` (10 tests): Price reference isolation (₹10 biscuit), numeric brand protection (20-20), leading zero preservation (SKU 002), retail collectives (one dozen = 12), quantity boundaries.
+2. `tests/test_multi_product.py` (5 tests): Multi-item extraction, multilingual conjunctions (Malayalam, Tamil, English), partial ambiguity retention, conversational removals.
+3. `tests/test_real_speech_provider.py` (5 tests): Sherpa-ONNX model lifecycle, CPU inference on 16kHz WAV, language switching without memory leak, invalid audio rejection.
+4. `tests/test_api_endpoints.py` (7 tests): Live/ready/diagnostics health checks, multi-variant clarification, price isolation, transcribe audio endpoint.
+5. `tests/test_cold_start.py` (10 tests): 503 cold-start protection, catalogue timeouts, idempotency caching, service auth verification, tenant sanitization, payload limits.
+6. `tests/test_false_matches.py` (7 tests): False match prevention (Egg vs Egg Masala), multi-variant ambiguity, SKU conflict detection, unverified tenant rejection.
+7. `tests/test_product_matching.py` (5 tests): Exact canonical match, approved aliases, cross-tenant product isolation.
+8. `tests/test_quantity_parser.py` (10 tests): English/Malayalam/Tamil number words, spoken digit sequences, units, package sizes, contradictory quantity rejection.
+9. `tests/test_sku_matching.py` (6 tests): Exact SKU leading zero preservation, spoken digit SKUs, unknown SKU rejection, SKU vs product name conflict.
+
 ---
 
-## 8. Model Lifecycle and Cold-Start Handling
-
-1. **Startup Warmup**: The speech recognition model initializes once during FastAPI application startup.
-2. **Cold-Start Guard**: If requests arrive while the model is in `loading` or `not_initialized` state, the endpoint returns HTTP `503 Service Unavailable` with `retryable: true` and `details.retry_after_seconds`.
-3. **Single Inference Worker**: To respect Render Free's 512 MB memory boundary, an `asyncio.Semaphore(1)` ensures inference concurrency is bounded.
-
----
-
-## 9. Render Deployment Instructions
+## 11. Render Free Deployment Instructions
 
 1. Link your Git repository to your Render account.
 2. Create a new **Web Service** on Render.
 3. Select **Docker** as the runtime.
-4. Set instance type to **Free**.
+4. Set instance type to **Free** (512 MB RAM, 0.5 CPU).
 5. Set Health Check path to `/health/live`.
-6. Configure environment variables in the Render Dashboard matching `.env.example`.
+6. Configure environment variables in the Render Dashboard matching `.env.example`:
+   - Set `SPEECH_PROVIDER=sherpa_onnx` (or `mock` for lightweight deployments).
+   - Set `ASR_LANGUAGE=en` (or `ml` / `ta`).
+   - Set `SERVICE_API_KEY` (min 32 chars).
 7. Deploy service.
 
----
-
-## 10. Known Limitations
-
-1. **Speech Model Weight**: The speech engine currently runs the lightweight verified mock provider. Deploying full offline models like `IndicConformer` or `Whisper.cpp` requires benchmarking against Render Free's 512 MB RAM ceiling.
-2. **Multi-Item Sequences in Single Utterance**: Currently processes one compound item request per utterance with multi-turn corrections. Compound utterances with "and" between multiple items are decomposed into candidates.
-
----
-
-## 11. Rollback Procedure
-
-If a deployed version causes unexpected behavior or regressions:
-1. Identify the previous stable commit using Git history:
-   ```bash
-   git log --oneline -n 5
-   ```
-2. Revert to the stable commit on a rollback branch:
-   ```bash
-   git checkout -b rollback-branch <STABLE_COMMIT_HASH>
-   ```
-3. Re-run tests to confirm all safety checks pass:
-   ```bash
-   pytest -v
-   ```
-4. Update Render's deployed branch to trigger the rollback deployment.
 

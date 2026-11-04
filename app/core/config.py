@@ -34,9 +34,17 @@ class Settings(BaseSettings):
     CATALOGUE_TIMEOUT_SECONDS: float = 3.0
     CATALOGUE_CACHE_TTL_SECONDS: int = 60
 
-    # Speech Recognition Model & Lifecycle
-    SPEECH_PROVIDER_TYPE: str = Field(default="mock", description="'mock' or 'offline_conformer'")
-    SPEECH_MODEL_NAME: str = "mock-speech-v1"
+    # Speech Recognition Engine & Production Configuration (Section 11)
+    SPEECH_PROVIDER: str = Field(default="mock", description="'mock' or 'sherpa_onnx'")
+    ASR_LANGUAGE: str = Field(default="en", description="'ml', 'ta', or 'en'")
+    ASR_MODEL_DIR: str = Field(default="models", description="Base directory containing onnx model files")
+    ASR_NUM_THREADS: int = Field(default=1, description="Number of CPU threads for inference")
+    ASR_MAX_AUDIO_SECONDS: float = Field(default=30.0, description="Max audio duration in seconds")
+    ASR_MAX_CONCURRENT_REQUESTS: int = Field(default=1, description="Max concurrent inference requests")
+
+    # Backward compatibility aliases
+    SPEECH_PROVIDER_TYPE: str = Field(default="mock", description="Alias for SPEECH_PROVIDER")
+    SPEECH_MODEL_NAME: str = "indicconformer-sherpa-onnx"
     SPEECH_MODEL_WARMUP_ON_STARTUP: bool = True
     MAX_AUDIO_SIZE_BYTES: int = 5 * 1024 * 1024  # 5 MB
     MAX_AUDIO_DURATION_SECONDS: float = 30.0

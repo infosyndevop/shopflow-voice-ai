@@ -75,9 +75,9 @@ class LanguageNormalizer:
     def clean_retail_text(text: str) -> str:
         """Sanitizes text while preserving alphanumeric characters, decimals, and product hyphens."""
         norm = LanguageNormalizer.normalize_unicode(text)
-        # Preserve Unicode Malayalam, Tamil, English alphabets, numbers, hyphens, and dots in numbers
-        # Remove unsupported symbols, control characters, or erratic quotes
-        cleaned = re.sub(r"[^\w\s\.\-]", " ", norm, flags=re.UNICODE)
+        # Preserve Unicode Malayalam, Tamil, English alphabets, numbers, hyphens, currency markers (₹), and dots in numbers
+        # Explicitly preserve Indic combining marks (vowels, viramas) in \u0D00-\u0D7F and \u0B80-\u0BFF
+        cleaned = re.sub(r"[^\w\s\.\-\u0D00-\u0D7F\u0B80-\u0BFF\u20B9/]", " ", norm, flags=re.UNICODE)
         # Ensure single spaces
         cleaned = re.sub(r"\s+", " ", cleaned).strip()
         return cleaned

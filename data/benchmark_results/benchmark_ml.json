@@ -1,0 +1,45 @@
+{
+  "language": "ml",
+  "model_file_size_mb": 188.44,
+  "load_time_seconds": 0.694,
+  "idle_memory_mb": 0.0,
+  "num_threads": 1,
+  "runs": [
+    {
+      "duration_seconds": 5,
+      "transcription_time_seconds": 0.594,
+      "cpu_time_seconds": 0.578,
+      "cpu_utilization_pct": 97.4,
+      "rtf": 0.1188,
+      "peak_memory_mb": 0.31,
+      "output_text": "അി"
+    },
+    {
+      "duration_seconds": 10,
+      "transcription_time_seconds": 1.004,
+      "cpu_time_seconds": 0.969,
+      "cpu_utilization_pct": 96.5,
+      "rtf": 0.1004,
+      "peak_memory_mb": 0.92,
+      "output_text": "അാണ്"
+    },
+    {
+      "duration_seconds": 20,
+      "transcription_time_seconds": 2.522,
+      "cpu_time_seconds": 2.438,
+      "cpu_utilization_pct": 96.7,
+      "rtf": 0.1261,
+      "peak_memory_mb": 1.84,
+      "output_text": "അാം"
+    },
+    {
+      "duration_seconds": 30,
+      "transcription_time_seconds": 4.038,
+      "cpu_time_seconds": 3.875,
+      "cpu_utilization_pct": 96.0,
+      "rtf": 0.1346,
+      "peak_memory_mb": 3.06,
+      "output_text": ""
+    }
+  ]
+}

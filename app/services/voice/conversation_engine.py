@@ -121,6 +121,76 @@ class ConversationEngine:
             return "correct"
         return "add"
 
+    @staticmethod
+    def split_utterance(text: str) -> List[str]:
+        """Splits compound conversational utterances into distinct candidate item phrases.
+
+        Handles:
+        - Punctuation delimiters: commas, semicolons, line breaks.
+        - Multilingual conjunctions: 'and', 'then', 'pinne', 'koodathe', 'matrum', 'appuram', 'കൂടാതെ', 'പിന്നെ', 'மற்றும்'.
+        - Protects brand names containing 'and' (e.g. 'Head and Shoulders').
+        - Preserves ordering.
+        """
+        raw = text.strip()
+        if not raw:
+            return []
+
+        # 1. Protect known multi-word brands containing 'and'
+        protected_brands = [
+            re.compile(r"\bhead\s+(?:and|&)\s+shoulders\b", re.IGNORECASE),
+            re.compile(r"\bsalt\s+(?:and|&)\s+pepper\b", re.IGNORECASE),
+            re.compile(r"\bpeanut\s+butter\s+(?:and|&)\s+jelly\b", re.IGNORECASE),
+        ]
+        placeholders = {}
+        for idx, pattern in enumerate(protected_brands):
+            m = pattern.search(raw)
+            if m:
+                ph = f"__PROTECTED_AND_{idx}__"
+                placeholders[ph] = m.group(0)
+                raw = pattern.sub(ph, raw)
+
+        # 2. First split by punctuation delimiters (commas, semicolons, periods when not decimal)
+        punct_segments = re.split(r"[,;]+|\.(?!\d)", raw)
+
+        # 3. For each segment, split on coordinating conjunctions
+        conjunction_pattern = re.compile(
+            r"\s+(?:and|pinne|koodathe|koodi|matrum|appuram|കൂടാതെ|പിന്നെ|மற்றும்)\s+",
+            re.IGNORECASE
+        )
+
+        final_segments = []
+        for seg in punct_segments:
+            seg = seg.strip()
+            if not seg:
+                continue
+            subparts = conjunction_pattern.split(seg)
+            for part in subparts:
+                part_clean = part.strip()
+                if part_clean:
+                    # Restore protected brands
+                    for ph, original in placeholders.items():
+                        part_clean = part_clean.replace(ph, original)
+                    final_segments.append(part_clean)
+
+        return final_segments if final_segments else [text.strip()]
+
+    def handle_correction(
+        self,
+        session: SessionState,
+        new_items: List[ItemInterpretation]
+    ) -> Optional[ItemInterpretation]:
+        """Replaces previous erroneous item with corrected product or quantity."""
+        if not session.items or not new_items:
+            return None
+        # Replace the last added item in session
+        corrected_item = new_items[-1]
+        if corrected_item.status == ItemStatus.VERIFIED:
+            old_item = session.items.pop()
+            session.items.append(corrected_item)
+            logger.info(f"Item corrected from '{old_item.product_name}' to '{corrected_item.product_name}'")
+            return corrected_item
+        return None
+
     def handle_pending_clarification(
         self,
         session: SessionState,

@@ -43,9 +43,25 @@ class ProductMatcher:
     def _clean_for_matching(text: str) -> str:
         """Standardizes product search string without destroying numbers or product markers."""
         norm = LanguageNormalizer.normalize_unicode(text).lower()
-        # Remove punctuation except hyphens and dots within numbers
-        cleaned = re.sub(r"[^\w\s\-]", " ", norm)
+        # Remove punctuation except hyphens, dots within numbers, and Indic combining marks
+        cleaned = re.sub(r"[^\w\s\-\u0D00-\u0D7F\u0B80-\u0BFF]", " ", norm)
         return " ".join(cleaned.split())
+
+    @staticmethod
+    def _singularize(text: str) -> str:
+        """Converts common English retail plurals to singular form safely."""
+        tokens = text.split()
+        res = []
+        for t in tokens:
+            if len(t) > 3 and t.endswith("ies"):
+                res.append(t[:-3] + "y")
+            elif len(t) > 3 and t.endswith("es") and not t.endswith(("sses", "ches", "shes")):
+                res.append(t[:-2])
+            elif len(t) > 3 and t.endswith("s") and not t.endswith("ss"):
+                res.append(t[:-1])
+            else:
+                res.append(t)
+        return " ".join(res)
 
     @classmethod
     async def find_candidates(
@@ -59,6 +75,7 @@ class ProductMatcher:
         if not clean_query:
             return []
 
+        clean_query_sing = cls._singularize(clean_query)
         products = await catalogue_provider.get_tenant_products(tenant_id)
         candidates: List[ProductCandidate] = []
 
@@ -69,13 +86,14 @@ class ProductMatcher:
                 continue
 
             canonical_clean = cls._clean_for_matching(product.canonical_name)
+            canonical_clean_sing = cls._singularize(canonical_clean)
             canonical_tokens = set(canonical_clean.split())
 
-            # 1. Exact Canonical Name Match
-            if clean_query == canonical_clean:
+            # 1. Exact Canonical Name Match (including singular/plural equivalences)
+            if clean_query == canonical_clean or clean_query_sing == canonical_clean_sing:
                 candidates.append(ProductCandidate(
                     product=product,
-                    match_score=1.0,
+                    match_score=1.0 if clean_query == canonical_clean else 0.99,
                     match_type="exact_canonical"
                 ))
                 continue
@@ -86,10 +104,11 @@ class ProductMatcher:
                 if not alias.is_active:
                     continue
                 alias_clean = cls._clean_for_matching(alias.alias_phrase)
-                if clean_query == alias_clean:
+                alias_clean_sing = cls._singularize(alias_clean)
+                if clean_query == alias_clean or clean_query_sing == alias_clean_sing:
                     candidates.append(ProductCandidate(
                         product=product,
-                        match_score=0.98,
+                        match_score=0.98 if clean_query == alias_clean else 0.97,
                         match_type="exact_alias"
                     ))
                     alias_matched = True

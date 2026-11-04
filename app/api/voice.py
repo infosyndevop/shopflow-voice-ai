@@ -1,7 +1,7 @@
 """Voice processing and interpretation endpoints."""
 
 import base64
-from typing import List, Optional
+from typing import List, Optional, Tuple
 from fastapi import APIRouter, Depends, Header, Request, status
 
 from app.api.health import increment_request_counter
@@ -75,58 +75,31 @@ async def transcribe_audio(
     return result
 
 
-@router.post(
-    "/interpret",
-    response_model=InterpretationResponse,
-    status_code=status.HTTP_200_OK,
-    summary="Interpret spoken product names, SKUs, variants, and quantities"
-)
-async def interpret_voice(
-    payload: InterpretationRequest,
-    security_ctx: TenantSecurityContext = Depends(get_tenant_context),
-):
-    """Processes transcript text into verified retail billing candidates.
+async def _process_item_segment(
+    segment_text: str,
+    tenant_id: str,
+    catalogue_provider,
+    is_authenticated: bool,
+) -> Tuple[Optional[ItemInterpretation], Optional[str]]:
+    """Processes a single item segment into an ItemInterpretation or returns it as unmatched."""
+    normalized_segment = LanguageNormalizer.normalize(segment_text)
 
-    Guarantees:
-    - Never silently selects an uncertain product.
-    - Never silently assumes quantity is 1 when unclear.
-    - Preserves SKU leading zeros exactly.
-    - Isolates price references from order quantities.
-    - Scoped strictly to authenticated tenant catalogue.
-    """
-    increment_request_counter()
-    tenant_id = security_ctx.tenant_id
-
-    # 1. Enforce Idempotency to prevent duplicate bill item addition
-    cached_resp = conversation_engine.get_cached_idempotent_response(tenant_id, payload.idempotency_key)
-    if cached_resp:
-        return cached_resp
-
-    # 2. Get or create session context
-    session_id, session = conversation_engine.get_or_create_session(tenant_id, payload.session_id)
-
-    catalogue_provider = get_catalogue_provider()
-
-    # 3. Language Normalization
-    raw_transcript = payload.transcript.strip()
-    normalized_transcript = LanguageNormalizer.normalize(raw_transcript)
-
-    # 4. Check for SKU in input
+    # 1. Check for SKU in segment
     sku_result = await SkuMatcher.match_sku(
-        text=normalized_transcript,
+        text=normalized_segment,
         tenant_id=tenant_id,
         catalogue_provider=catalogue_provider
     )
 
-    clean_text = sku_result.clean_text if sku_result.extracted_sku else normalized_transcript
+    clean_text = sku_result.clean_text if sku_result.extracted_sku else normalized_segment
 
-    # 5. Quantity, Package Size, and Price Reference Parsing
+    # 2. Quantity, Package Size, and Price Reference Parsing
     qty_result = QuantityParser.parse(clean_text)
 
     # Text remaining after quantity and package-size extraction
     product_search_text = qty_result.remaining_text.strip()
 
-    # 6. Product Resolution
+    # 3. Product Resolution
     matched_product = None
     product_score = 0.0
     product_candidates = []
@@ -159,7 +132,7 @@ async def interpret_voice(
         product_candidates = match_result.candidates
         clarification_prompt = match_result.clarification_prompt
 
-    # 7. Variant Resolution
+    # 4. Variant Resolution
     matched_variant = None
     variant_matched = False
     has_multiple_variants = False
@@ -174,15 +147,14 @@ async def interpret_voice(
                 product=matched_product,
                 package_size=qty_result.package_size,
                 sku=sku_result.extracted_sku,
-                spoken_text=raw_transcript
+                spoken_text=segment_text
             )
             matched_variant = v_result.variant
             variant_matched = (matched_variant is not None)
             if v_result.clarification_required:
                 clarification_prompt = clarification_prompt or v_result.clarification_prompt
 
-    # 8. Confidence Evaluation
-    item_status = ItemStatus.UNMATCHED
+    # 5. Confidence Evaluation
     rejection_reason = None
     if sku_result.is_conflict:
         rejection_reason = sku_result.conflict_reason
@@ -195,13 +167,9 @@ async def interpret_voice(
         quantity=qty_result.quantity,
         quantity_ambiguous=qty_result.is_ambiguous,
         has_sku_conflict=sku_result.is_conflict,
-        is_tenant_verified=security_ctx.is_authenticated,
+        is_tenant_verified=is_authenticated,
         rejection_reason=rejection_reason,
     )
-
-    # 9. Build Item Interpretation
-    items: List[ItemInterpretation] = []
-    unmatched_phrases: List[str] = []
 
     candidate_options = [
         CandidateProductOption(
@@ -231,31 +199,118 @@ async def interpret_voice(
             clarification_prompt=clarification_prompt or conf_metrics.rejection_reason,
             candidate_options=candidate_options
         )
-        items.append(item_interp)
-
-        if conf_metrics.status == ItemStatus.NEEDS_CLARIFICATION:
-            session.pending_clarification_item = item_interp
-        elif conf_metrics.status == ItemStatus.VERIFIED:
-            session.items.append(item_interp)
-            session.pending_clarification_item = None
+        return (item_interp, None)
     else:
-        unmatched_phrases.append(raw_transcript)
+        return (None, segment_text)
 
-    # 10. Multi-turn Intent Handling (Remove or Clarification resolution)
+
+@router.post(
+    "/interpret",
+    response_model=InterpretationResponse,
+    status_code=status.HTTP_200_OK,
+    summary="Interpret spoken product names, SKUs, variants, and quantities"
+)
+async def interpret_voice(
+    payload: InterpretationRequest,
+    security_ctx: TenantSecurityContext = Depends(get_tenant_context),
+):
+    """Processes transcript text into verified retail billing candidates.
+
+    Guarantees:
+    - Supports multiple distinct products in a single compound utterance.
+    - Never silently selects an uncertain product.
+    - Never silently assumes quantity is 1 when unclear.
+    - Preserves SKU leading zeros exactly.
+    - Isolates price references from order quantities.
+    - Scoped strictly to authenticated tenant catalogue.
+    """
+    increment_request_counter()
+    tenant_id = security_ctx.tenant_id
+
+    # 1. Enforce Idempotency to prevent duplicate bill item addition
+    cached_resp = conversation_engine.get_cached_idempotent_response(tenant_id, payload.idempotency_key)
+    if cached_resp:
+        return cached_resp
+
+    # 2. Get or create session context
+    session_id, session = conversation_engine.get_or_create_session(tenant_id, payload.session_id)
+    catalogue_provider = get_catalogue_provider()
+
+    raw_transcript = payload.transcript.strip()
+    normalized_transcript = LanguageNormalizer.normalize(raw_transcript)
+
+    if not raw_transcript:
+        return InterpretationResponse(
+            status=InterpretationStatus.UNMATCHED,
+            transcript="",
+            normalized_transcript="",
+            items=[],
+            unmatched_phrases=[],
+            session_id=session_id,
+            request_id=security_ctx.request_id,
+        )
+
+    # 3. Multi-turn Intent Detection (remove, correct, add)
     intent = conversation_engine.detect_intent(raw_transcript)
-    if intent == "remove" and items and items[0].product_id:
-        # Mark item as removed
-        items[0].status = ItemStatus.REJECTED
-        items[0].clarification_prompt = "Item removed by employee voice command"
 
-    overall_status = ConfidenceEngine.derive_overall_status([it.status for it in items])
-    if not items and unmatched_phrases:
+    # 4. Split compound utterance into candidate item segments
+    segments = conversation_engine.split_utterance(raw_transcript)
+
+    items: List[ItemInterpretation] = []
+    unmatched_phrases: List[str] = []
+
+    for seg in segments:
+        item_interp, unmatched_txt = await _process_item_segment(
+            segment_text=seg,
+            tenant_id=tenant_id,
+            catalogue_provider=catalogue_provider,
+            is_authenticated=security_ctx.is_authenticated,
+        )
+        if item_interp:
+            items.append(item_interp)
+        elif unmatched_txt:
+            unmatched_phrases.append(unmatched_txt)
+
+    # 5. Multi-turn Intent and Clarification Handling
+    if intent == "remove" and items:
+        for it in items:
+            it.status = ItemStatus.REJECTED
+            it.clarification_prompt = "Item removed by employee voice command"
+    elif intent == "correct" and items:
+        conversation_engine.handle_correction(session, items)
+
+    # If session has pending clarification, attempt resolution
+    if session.pending_clarification_item:
+        conversation_engine.handle_pending_clarification(session, raw_transcript, items)
+
+    # Update session items for verified items
+    for it in items:
+        if it.status == ItemStatus.VERIFIED:
+            session.items.append(it)
+            if session.pending_clarification_item and session.pending_clarification_item.product_id == it.product_id:
+                session.pending_clarification_item = None
+        elif it.status == ItemStatus.NEEDS_CLARIFICATION:
+            session.pending_clarification_item = it
+
+    # 6. Overall status determination
+    if items:
+        overall_status = ConfidenceEngine.derive_overall_status([it.status for it in items])
+        # If all parsed items are verified but some phrases were unresolved, ask for clarification
+        if unmatched_phrases and overall_status == InterpretationStatus.VERIFIED:
+            overall_status = InterpretationStatus.NEEDS_CLARIFICATION
+    else:
         overall_status = InterpretationStatus.UNMATCHED
 
     clarification_required = (overall_status == InterpretationStatus.NEEDS_CLARIFICATION)
     clarification_question = None
-    if clarification_required and items:
-        clarification_question = items[0].clarification_prompt or "Could you please clarify the product or variant?"
+    if clarification_required:
+        clarifying_item = next((it for it in items if it.status == ItemStatus.NEEDS_CLARIFICATION), None)
+        if clarifying_item and clarifying_item.clarification_prompt:
+            clarification_question = clarifying_item.clarification_prompt
+        elif unmatched_phrases:
+            clarification_question = f"Could not recognize item phrase: '{unmatched_phrases[0]}'. Please clarify."
+        else:
+            clarification_question = "Could you please clarify the product or variant?"
 
     response = InterpretationResponse(
         status=overall_status,

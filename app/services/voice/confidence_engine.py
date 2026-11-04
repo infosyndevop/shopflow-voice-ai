@@ -121,7 +121,7 @@ class ConfidenceEngine:
                 rejection_reason="Disagreement between product name and spoken SKU",
             )
 
-        if quantity_ambiguous:
+        if quantity_ambiguous or quantity is None or quantity <= 0:
             return ConfidenceMetrics(
                 speech_confidence=speech_quality,
                 product_confidence=product_score,
@@ -129,7 +129,7 @@ class ConfidenceEngine:
                 quantity_confidence=0.0,
                 overall_confidence=overall,
                 status=ItemStatus.NEEDS_CLARIFICATION,
-                rejection_reason="Ambiguous or conflicting quantity",
+                rejection_reason="Missing, invalid, or ambiguous quantity",
             )
 
         if has_multiple_variants and not variant_matched:

@@ -9,9 +9,10 @@ ENV PYTHONUNBUFFERED=1 \
 
 WORKDIR /app
 
-# Install system utilities if needed
+# Install system utilities and libsndfile for audio decoding
 RUN apt-get update && apt-get install -y --no-install-recommends \
     curl \
+    libsndfile1 \
     && rm -rf /var/lib/apt/lists/*
 
 # Install python dependencies
@@ -19,8 +20,13 @@ COPY requirements.txt .
 RUN pip install --no-cache-dir --upgrade pip && \
     pip install --no-cache-dir -r requirements.txt
 
-# Copy application source
+# Copy application source and utility scripts
 COPY app/ app/
+COPY scripts/ scripts/
+
+# Download the configured production model during image build if requested
+ARG BUILD_ASR_LANG="en"
+RUN python scripts/download_models.py --lang ${BUILD_ASR_LANG} || true
 
 # Non-root user for production security
 RUN useradd -m -u 1000 appuser && chown -R appuser:appuser /app
@@ -34,4 +40,3 @@ EXPOSE 8000
 
 # Run with 1 worker to conserve RAM on Render Free (512 MB limit)
 CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000", "--workers", "1"]
-

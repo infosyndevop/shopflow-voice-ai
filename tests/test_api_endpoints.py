@@ -99,7 +99,11 @@ def test_api_interpret_price_reference_not_confused_with_quantity():
 
 def test_api_transcribe_audio_endpoint():
     async def _test():
-        run_async(model_manager.startup())
+        from app.services.voice.speech_recognition import MockSpeechRecognitionProvider
+        mock_p = MockSpeechRecognitionProvider(simulated_transcript="two urvashi soap")
+        run_async(mock_p.initialize())
+        model_manager.set_provider(mock_p)
+
         ctx = TenantSecurityContext(tenant_id="tenant_default", is_authenticated=True, request_id="req-4")
         audio_b64 = base64.b64encode(b"two urvashi soap").decode("utf-8")
         req = AudioTranscribeRequest(audio_base64=audio_b64, mime_type="audio/wav")

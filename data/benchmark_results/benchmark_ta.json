@@ -1,0 +1,45 @@
+{
+  "language": "ta",
+  "model_file_size_mb": 188.44,
+  "load_time_seconds": 0.707,
+  "idle_memory_mb": 0.0,
+  "num_threads": 1,
+  "runs": [
+    {
+      "duration_seconds": 5,
+      "transcription_time_seconds": 0.554,
+      "cpu_time_seconds": 0.547,
+      "cpu_utilization_pct": 98.7,
+      "rtf": 0.1108,
+      "peak_memory_mb": 0.31,
+      "output_text": "அ"
+    },
+    {
+      "duration_seconds": 10,
+      "transcription_time_seconds": 0.947,
+      "cpu_time_seconds": 0.953,
+      "cpu_utilization_pct": 100.7,
+      "rtf": 0.0947,
+      "peak_memory_mb": 0.92,
+      "output_text": "அ"
+    },
+    {
+      "duration_seconds": 20,
+      "transcription_time_seconds": 2.567,
+      "cpu_time_seconds": 2.516,
+      "cpu_utilization_pct": 98.0,
+      "rtf": 0.1283,
+      "peak_memory_mb": 1.84,
+      "output_text": "அ"
+    },
+    {
+      "duration_seconds": 30,
+      "transcription_time_seconds": 4.295,
+      "cpu_time_seconds": 4.125,
+      "cpu_utilization_pct": 96.0,
+      "rtf": 0.1432,
+      "peak_memory_mb": 3.06,
+      "output_text": "அ"
+    }
+  ]
+}

@@ -11,14 +11,14 @@ DIGIT_WORD_MAP: Dict[str, str] = {
     "zero": "0", "one": "1", "two": "2", "three": "3", "four": "4",
     "five": "5", "six": "6", "seven": "7", "eight": "8", "nine": "9",
     # Malayalam digits / numbers
-    "പൂജ്യം": "0", "ഒന്ന്": "1", "രണ്ട്": "2", "മൂന്ന്": "3", "നാല്": "4",
+    "പൂജ്യം": "0", "ഒന്ന്": "1", "ഒരു": "1", "രണ്ട്": "2", "മൂന്ന്": "3", "നാല്": "4",
     "അഞ്ച്": "5", "ആറ്": "6", "ഏഴ്": "7", "എട്ട്": "8", "ഒമ്പത്": "9",
     # Malayalam transliterated
-    "poojyam": "0", "onnu": "1", "randu": "2", "moonu": "3", "moonn": "3",
+    "poojyam": "0", "onnu": "1", "oru": "1", "randu": "2", "moonu": "3", "moonn": "3",
     "nalu": "4", "naalu": "4", "anju": "5", "aaru": "6", "ezhu": "7",
     "ettu": "8", "ompathu": "9",
     # Tamil digits / numbers
-    "பூஜ்ஜியம்": "0", "ஒன்று": "1", "இரண்டு": "2", "மூன்று": "3", "நான்கு": "4",
+    "பூஜ்ஜியம்": "0", "ஒன்று": "1", "ஒரு": "1", "இரண்டு": "2", "மூன்று": "3", "நான்கு": "4",
     "ஐந்து": "5", "ஆறு": "6", "ஏழு": "7", "எட்டு": "8", "ஒன்பது": "9",
     # Tamil transliterated
     "poojiyam": "0", "ondru": "1", "rendu": "2", "irandu": "2",
@@ -32,6 +32,8 @@ MAGNITUDE_MAP: Dict[str, float] = {
     "twenty": 20, "thirty": 30, "forty": 40, "fifty": 50, "sixty": 60,
     "seventy": 70, "eighty": 80, "ninety": 90,
     "hundred": 100, "thousand": 1000,
+    # Retail collectives
+    "dozen": 12, "ഡസൻ": 12, "டஜன்": 12,
     # English fractions
     "quarter": 0.25, "half": 0.5,
     # Malayalam tens & hundreds
@@ -142,6 +144,8 @@ class NumberParser:
                 current_val = 0.0
             elif val == 100:
                 current_val = (current_val if current_val > 0 else 1.0) * 100
+            elif val == 12:  # Dozen multiplier
+                current_val = (current_val if current_val > 0 else 1.0) * 12
             else:
                 current_val += val
 

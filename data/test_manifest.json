@@ -1,0 +1,152 @@
+{
+  "version": "1.0.0",
+  "dataset_description": "ShopFlow Retail Voice AI Test Dataset Manifest",
+  "created_at": "2026-11-04T21:35:00Z",
+  "recordings": [
+    {
+      "id": "ml_soap_01",
+      "audio_file": "ml_soap_01.wav",
+      "language": "ml",
+      "expected_transcript": "രണ്ട് ഊർവശി സോപ്പ്",
+      "expected_items": [
+        {
+          "product_name": "Urvashi Soap",
+          "quantity": 2.0,
+          "unit": "piece",
+          "package_size": null,
+          "sku": null
+        }
+      ],
+      "noise_conditions": "clean_indoor",
+      "consent_recorded": true,
+      "speaker_notes": "Employee recording, consent form SF-ML-001"
+    },
+    {
+      "id": "ml_washing_soap_02",
+      "audio_file": "ml_washing_soap_02.wav",
+      "language": "ml",
+      "expected_transcript": "നൂറ്റിയറുപത് ഗ്രാം തുണി സോപ്പ് മൂന്ന് പാക്കറ്റ്",
+      "expected_items": [
+        {
+          "product_name": "Washing Soap",
+          "quantity": 3.0,
+          "unit": "packet",
+          "package_size": "160g",
+          "sku": "002"
+        }
+      ],
+      "noise_conditions": "store_counter_ambient",
+      "consent_recorded": true,
+      "speaker_notes": "Cashier recording, consent form SF-ML-002"
+    },
+    {
+      "id": "ta_soap_01",
+      "audio_file": "ta_soap_01.wav",
+      "language": "ta",
+      "expected_transcript": "இரண்டு ஊர்வசி சோப்",
+      "expected_items": [
+        {
+          "product_name": "Urvashi Soap",
+          "quantity": 2.0,
+          "unit": "piece",
+          "package_size": null,
+          "sku": null
+        }
+      ],
+      "noise_conditions": "clean_indoor",
+      "consent_recorded": true,
+      "speaker_notes": "Employee recording, consent form SF-TA-001"
+    },
+    {
+      "id": "ta_egg_02",
+      "audio_file": "ta_egg_02.wav",
+      "language": "ta",
+      "expected_transcript": "பத்து முட்டை",
+      "expected_items": [
+        {
+          "product_name": "Egg",
+          "quantity": 10.0,
+          "unit": "piece",
+          "package_size": null,
+          "sku": "EGG-001"
+        }
+      ],
+      "noise_conditions": "clean_indoor",
+      "consent_recorded": true,
+      "speaker_notes": "Employee recording, consent form SF-TA-002"
+    },
+    {
+      "id": "en_soap_01",
+      "audio_file": "en_soap_01.wav",
+      "language": "en",
+      "expected_transcript": "three packets of 160 gram washing soap",
+      "expected_items": [
+        {
+          "product_name": "Washing Soap",
+          "quantity": 3.0,
+          "unit": "packet",
+          "package_size": "160g",
+          "sku": "002"
+        }
+      ],
+      "noise_conditions": "clean_indoor",
+      "consent_recorded": true,
+      "speaker_notes": "Cashier terminal recording, consent form SF-EN-001"
+    },
+    {
+      "id": "en_cookies_02",
+      "audio_file": "en_cookies_02.wav",
+      "language": "en",
+      "expected_transcript": "two packets 20-20 butter cookies",
+      "expected_items": [
+        {
+          "product_name": "20-20 Butter Cookies",
+          "quantity": 2.0,
+          "unit": "packet",
+          "package_size": "100g",
+          "sku": "2020-BC-100"
+        }
+      ],
+      "noise_conditions": "retail_scanner_beep_ambient",
+      "consent_recorded": true,
+      "speaker_notes": "Terminal audio, consent form SF-EN-002"
+    },
+    {
+      "id": "en_egg_masala_03",
+      "audio_file": "en_egg_masala_03.wav",
+      "language": "en",
+      "expected_transcript": "one egg masala",
+      "expected_items": [
+        {
+          "product_name": "Egg Masala",
+          "quantity": 1.0,
+          "unit": "packet",
+          "package_size": "100g",
+          "sku": "EGG-MAS-100"
+        }
+      ],
+      "noise_conditions": "clean_indoor",
+      "consent_recorded": true,
+      "speaker_notes": "Cashier terminal, consent form SF-EN-003"
+    },
+    {
+      "id": "mixed_code_switching_01",
+      "audio_file": "mixed_code_switching_01.wav",
+      "language": "mixed",
+      "expected_transcript": "two egg masala packet",
+      "expected_items": [
+        {
+          "product_name": "Egg Masala",
+          "quantity": 2.0,
+          "unit": "packet",
+          "package_size": "100g",
+          "sku": "EGG-MAS-100"
+        }
+      ],
+      "noise_conditions": "store_counter_ambient",
+      "consent_recorded": true,
+      "speaker_notes": "Bilingual speaker, consent form SF-MIX-001"
+    }
+  ]
+}
+

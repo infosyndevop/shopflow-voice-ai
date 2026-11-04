@@ -1,0 +1,45 @@
+{
+  "language": "en",
+  "model_file_size_mb": 166.52,
+  "load_time_seconds": 1.135,
+  "idle_memory_mb": 0.0,
+  "num_threads": 1,
+  "runs": [
+    {
+      "duration_seconds": 5,
+      "transcription_time_seconds": 0.184,
+      "cpu_time_seconds": 0.172,
+      "cpu_utilization_pct": 93.4,
+      "rtf": 0.0368,
+      "peak_memory_mb": 0.32,
+      "output_text": "."
+    },
+    {
+      "duration_seconds": 10,
+      "transcription_time_seconds": 0.353,
+      "cpu_time_seconds": 0.359,
+      "cpu_utilization_pct": 101.9,
+      "rtf": 0.0353,
+      "peak_memory_mb": 0.93,
+      "output_text": "."
+    },
+    {
+      "duration_seconds": 20,
+      "transcription_time_seconds": 0.876,
+      "cpu_time_seconds": 0.812,
+      "cpu_utilization_pct": 92.7,
+      "rtf": 0.0438,
+      "peak_memory_mb": 1.84,
+      "output_text": ""
+    },
+    {
+      "duration_seconds": 30,
+      "transcription_time_seconds": 1.267,
+      "cpu_time_seconds": 1.25,
+      "cpu_utilization_pct": 98.7,
+      "rtf": 0.0422,
+      "peak_memory_mb": 3.07,
+      "output_text": ""
+    }
+  ]
+}

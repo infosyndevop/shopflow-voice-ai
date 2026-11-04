@@ -53,6 +53,9 @@ class MockCatalogueProvider(CatalogueProvider):
                 CatalogueAlias(alias_phrase="urvashi soap", product_id="prod-urvashi-soap"),
                 CatalogueAlias(alias_phrase="urvasi soap", product_id="prod-urvashi-soap"),
                 CatalogueAlias(alias_phrase="ഊർവശി സോപ്പ്", product_id="prod-urvashi-soap", language="ml"),
+                CatalogueAlias(alias_phrase="ഉർവ്വശി സോപ്പ്", product_id="prod-urvashi-soap", language="ml"),
+                CatalogueAlias(alias_phrase="ഉർവശി സോപ്പ്", product_id="prod-urvashi-soap", language="ml"),
+                CatalogueAlias(alias_phrase="ഊർവ്വശി സോപ്പ്", product_id="prod-urvashi-soap", language="ml"),
                 CatalogueAlias(alias_phrase="ஊர்வசி சோப்", product_id="prod-urvashi-soap", language="ta"),
             ],
         )

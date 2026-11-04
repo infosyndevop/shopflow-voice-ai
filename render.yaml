@@ -19,14 +19,26 @@ services:
         value: https://main-backend.shopflow.example.com
       - key: SHOPFLOW_INTERNAL_API_KEY
         sync: false
+      - key: SPEECH_PROVIDER
+        value: sherpa_onnx
       - key: SPEECH_PROVIDER_TYPE
-        value: mock
+        value: sherpa_onnx
+      - key: ASR_LANGUAGE
+        value: en
+      - key: ASR_MODEL_DIR
+        value: models
+      - key: ASR_NUM_THREADS
+        value: "1"
+      - key: ASR_MAX_CONCURRENT_REQUESTS
+        value: "1"
       - key: SPEECH_MODEL_NAME
-        value: mock-speech-v1
+        value: indicconformer-sherpa-onnx
       - key: SPEECH_MODEL_WARMUP_ON_STARTUP
         value: "true"
       - key: MAX_AUDIO_SIZE_BYTES
         value: "5242880"
+      - key: MAX_AUDIO_DURATION_SECONDS
+        value: "30.0"
       - key: INFERENCE_TIMEOUT_SECONDS
         value: "8.0"
       - key: HIGH_CONFIDENCE_THRESHOLD
@@ -35,4 +47,3 @@ services:
         value: "0.60"
       - key: DEFAULT_MAX_QUANTITY
         value: "500"
-
